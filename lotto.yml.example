@@ -1,0 +1,9 @@
+lottos:
+    -   tags: <tagnames>
+        group: <group_id>
+        begin: <begin_number>
+        end: <end_number>
+    -   tags: <tagnames>
+        group: <group_id>
+        begin: <begin_number>
+        end: <end_number>
