@@ -5,6 +5,7 @@ BAAC Lotto Checker Module.
 import re
 import requests
 from pyquery import PyQuery
+from requests import exceptions
 
 class Checker():
     """Checker
@@ -20,29 +21,44 @@ class Checker():
 
         Check recent lotto announcement date.
         """
-        headers = {'Accept-Charset': 'utf-8'}
-        response = requests.get(Checker.API_URL, headers=headers, verify=False)
-        html_text = str(response.content.decode('utf-8'))
-        pyq = PyQuery(html_text)
-        recent_lotto_announcement_date = pyq('select[name="lotto_date"] > option:first-child')
-        return recent_lotto_announcement_date.text()
+        result_date = ""
+        try:
+            headers = {'Accept-Charset': 'utf-8'}
+            response = requests.get(Checker.API_URL, headers=headers, verify=False)
+            if response.status_code == 200:
+                html_text = str(response.content.decode('utf-8'))
+                pyq = PyQuery(html_text)
+                recent_lotto_announcement_date = pyq('select[name="lotto_date"] > option:first-child')
+                result_date = recent_lotto_announcement_date.text()
+            else:
+                raise Exception('HTTP Error: {}'.format(response.status_code))
+        except Exception as exception:
+            return (False, exception)
+        return (True, result_date)
 
     def check_recent(self, lotto_config):
         """check_recent
 
         Check recent lotto result.
         """
-        payload = {
-            'lotto_group': lotto_config['group'],
-            'start_no': lotto_config['begin'],
-            'stop_no': lotto_config['end'],
-            'inside': 5
-        }
-        headers = {'Accept-Charset': 'utf-8'}
-        response = requests.get(Checker.API_URL, params=payload, headers=headers, verify=False)
-        result = self._parse_lotto_result(str(response.content.decode('utf-8')))
-        result['tags'] = list(map(lambda tag: tag.strip(), lotto_config['tags'].split(',')))
-        return result
+        result = []
+        try:
+            payload = {
+                'lotto_group': lotto_config['group'],
+                'start_no': lotto_config['begin'],
+                'stop_no': lotto_config['end'],
+                'inside': 5
+            }
+            headers = {'Accept-Charset': 'utf-8'}
+            response = requests.get(Checker.API_URL, params=payload, headers=headers, verify=False)
+            if response.status_code == 200:
+                result = self._parse_lotto_result(str(response.content.decode('utf-8')))
+                result['tags'] = list(map(lambda tag: tag.strip(), lotto_config['tags'].split(',')))
+            else:
+                raise Exception('HTTP Error: {}'.format(response.status_code))
+        except Exception as exception:
+            return (False, exception)
+        return (True, result)
 
     @classmethod
     def _parse_lotto_result(cls, content):
